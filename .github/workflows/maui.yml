@@ -1,0 +1,58 @@
+name: MAUI Unit Tests
+
+on:
+  push:
+    branches: [main, dev, release]
+  pull_request:
+    branches: [main, dev, release]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      # Cache NuGet packages
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+      # Cache MAUI workloads
+      - name: Cache MAUI workloads
+        uses: actions/cache@v3
+        with:
+          path: ~/.dotnet/workloads
+          key: maui-workloads-${{ runner.os }}-${{ hashFiles('global.json') }}
+          restore-keys: |
+            maui-workloads-${{ runner.os }}-
+      - name: Install MAUI workloads (if cache miss)
+        run: |
+          dotnet workload install maui-android --skip-manifest-update
+        env:
+          DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+          DOTNET_NOLOGO: true
+
+      - name: Restore dependencies
+        run: dotnet restore
+        env:
+          DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+      - name: Build all projects (parallel)
+        run: dotnet build --configuration Release --no-restore -m:4
+        env:
+          DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+      - name: Run unit tests
+        run: dotnet test --configuration Release --no-build --verbosity normal
+        env:
+          DOTNET_CLI_TELEMETRY_OPTOUT: 1
