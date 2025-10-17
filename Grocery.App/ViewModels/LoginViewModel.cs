@@ -9,6 +9,7 @@ namespace Grocery.App.ViewModels
     public partial class LoginViewModel : BaseViewModel
     {
         private readonly IAuthService _authService;
+        private readonly IClientService _clientService;
         private readonly GlobalViewModel _global;
 
         [ObservableProperty]
@@ -20,9 +21,10 @@ namespace Grocery.App.ViewModels
         [ObservableProperty]
         private string loginMessage;
 
-        public LoginViewModel(IAuthService authService, GlobalViewModel global)
+        public LoginViewModel(IAuthService authService, IClientService clientService, GlobalViewModel global)
         { //_authService = App.Services.GetServices<IAuthService>().FirstOrDefault();
             _authService = authService;
+            _clientService = clientService;
             _global = global;
         }
 
@@ -34,6 +36,7 @@ namespace Grocery.App.ViewModels
             {
                 LoginMessage = $"Welkom {authenticatedClient.Name}!";
                 _global.Client = authenticatedClient;
+                _clientService.CurrentClient = authenticatedClient;
                 Application.Current.MainPage = new AppShell();
             }
             else
